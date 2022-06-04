@@ -12,51 +12,17 @@ const Square = ({id, value, onClick}) => {
 };
 
 class Board extends React.Component {
-    constructor(props) {
-        super(props);
-        
-        this.state = {
-            nextPlayer: 'X',
-            squares: Array(9).fill(''),
-            hasWinner: false,
-        };
-    }
-    
     renderSquare(id) {
         return <Square
             id={id}
-            value={this.state.squares[id]}
-            onClick={this.updateSquare}
+            value={this.props.squares[id]}
+            onClick={this.props.onClick}
         />;
-    }
-    
-    updateSquare = (id) => {
-        if (this.state.hasWinner || this.state.squares[id]) {
-            return;
-        }
-        
-        const squares = this.state.squares.slice();
-        squares[id] = this.state.nextPlayer;
-        this.setState({
-            squares,
-            nextPlayer: this.state.nextPlayer === 'X' ? 'O' : 'X',
-            hasWinner: Boolean(calculateWinner(squares)),
-        });
-    };
-    
-    getStatus() {
-        if (this.state.hasWinner) {
-            const winner = this.state.nextPlayer === 'X' ? 'O' : 'X';
-            return 'Winner: ' + winner;
-        } else {
-            return 'Next player: ' + this.state.nextPlayer;
-        }
     }
     
     render() {
         return (
             <div>
-                <div className="status">{this.getStatus()}</div>
                 <div className="board-row">
                     {this.renderSquare(0)}
                     {this.renderSquare(1)}
@@ -78,14 +44,91 @@ class Board extends React.Component {
 }
 
 class Game extends React.Component {
+    constructor(props) {
+        super(props);
+        
+        this.state = {
+            history: [
+                {
+                    nextPlayer: 'X',
+                    squares: Array(9).fill(''),
+                    hasWinner: false,
+                }
+            ],
+            curStepNum: 0,
+        };
+    }
+    
+    jumpTo(stepNum) {
+        this.setState({
+            curStepNum: stepNum,
+        });
+    }
+    
+    updateHistory(step) {
+    
+    }
+    
+    updateSquare = (id) => {
+        const lastStep = this.state.history[this.state.curStepNum];
+        if (lastStep.hasWinner || lastStep.squares[id]) {
+            return;
+        }
+        
+        const squares = lastStep.squares.slice();
+        squares[id] = lastStep.nextPlayer;
+        const nextPlayer = lastStep.nextPlayer === 'X' ? 'O' : 'X';
+        this.setState({
+            history: this.state.history.slice(0, this.state.curStepNum + 1).concat([{
+                squares,
+                nextPlayer,
+                hasWinner: Boolean(calculateWinner(squares)),
+            }]),
+            curStepNum: this.state.curStepNum + 1,
+        });
+    };
+    
+    getStatus() {
+        const lastStep = this.state.history[this.state.curStepNum];
+        if (lastStep.hasWinner) {
+            const winner = lastStep.nextPlayer === 'X' ? 'O' : 'X';
+            return 'Winner: ' + winner;
+        } else {
+            return 'Next player: ' + lastStep.nextPlayer;
+        }
+    }
+    
     render() {
         return (
             <div className="game">
                 <div className="game-board">
-                    <Board/>
+                    <Board
+                        onClick={this.updateSquare}
+                        squares={this.state.history[this.state.curStepNum].squares}
+                    />
                 </div>
                 <div className="game-info">
-                    <ol>{/* TODO */}</ol>
+                    <div className="status">{this.getStatus()}</div>
+                    
+                    <ol>
+                        <li>
+                            <button onClick={() => this.jumpTo(0)}>
+                                Go to game start
+                            </button>
+                        </li>
+                        
+                        {
+                            this.state.history.slice(1).map((step, stepNum) => {
+                                return (
+                                    <li key={stepNum}>
+                                        <button onClick={() => this.jumpTo(stepNum)}>
+                                            Go to move #{stepNum}
+                                        </button>
+                                    </li>
+                                );
+                            })
+                        }
+                    </ol>
                 </div>
             </div>
         );
