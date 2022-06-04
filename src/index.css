@@ -5,11 +5,6 @@ body {
     user-select: none;
 }
 
-a {
-    color: black;
-    text-decoration: none;
-}
-
 ol, ul {
     padding-left: 30px;
 }
